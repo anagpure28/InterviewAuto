@@ -7,18 +7,22 @@ import { Scrollbars } from "react-custom-scrollbars-2";
 import { FaAngular, FaReact } from "react-icons/fa";
 import { LiaJava } from "react-icons/lia";
 import { DiNodejs } from "react-icons/di";
+// import { BsFillMicFill } from "react-icons/bs";
+// import { BsFillMicMuteFill } from "react-icons/bs";
 import TextMsg from "../components/TextMsg";
-import { useToast } from "@chakra-ui/react";
+import { Box, SkeletonCircle, SkeletonText, useToast } from "@chakra-ui/react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import boy from "../Images/boy.jpg"
 import VideoChat from "../components/VideoChat";
 import { url } from "../Url/url.js";
+// import SpeechRecognition, {useSpeechRecognition} from "react-speech-recognition";
 
 const ScreenPage = () => {
   const [text, setText] = useState("");
   const [data, setData] = useState([]);
   const [aiData, setAiData] = useState([]);
+  // const [textToCopy, setTextToCopy] = useState();
   const [instantFeedback, setInstantFeedback] = useState(false);
   // console.log(instantFeedback)
   const navigate = useNavigate();
@@ -142,6 +146,17 @@ const ScreenPage = () => {
     }, 3500);
   };
 
+  // const startListening = () =>
+  //   SpeechRecognition.startListening({ continuous: true, language: "en-IN" });
+  // const {
+  //   transcript,
+  //   browserSupportsSpeechRecognition
+  // } = useSpeechRecognition();
+
+  // if (!browserSupportsSpeechRecognition) {
+  //   return null;
+  // }
+
   return (
     <div className="screen-main-cont">
       <div className="animate__animated animate__backInDown">
@@ -230,6 +245,9 @@ const ScreenPage = () => {
                         );
                       }
                     })}
+                  {/* <div className="main-content" onClick={() => setTextToCopy(transcript)}>
+                    {transcript}
+                  </div> */}
                   </div>
                 </Scrollbars>
               </div>
@@ -242,15 +260,23 @@ const ScreenPage = () => {
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                 />
-                <button onClick={handleSubmit}>
-                  <RiSendPlane2Fill
-                    style={{
-                      marginLeft: "1rem",
-                      fontSize: "25px",
-                      color: "grey",
-                    }}
-                  />
-                </button>
+                <div className="screen-input-flex-button">
+                  <button className="submitButton" onClick={handleSubmit}>
+                    <RiSendPlane2Fill
+                      style={{
+                        marginLeft: "1rem",
+                        fontSize: "25px",
+                        color: "grey",
+                      }}
+                    />
+                  </button>
+                  {/* <button className="mic" onClick={startListening}>
+                    <BsFillMicFill />
+                  </button>
+                  <button className="mic2" onClick={SpeechRecognition.stopListening}>
+                    <BsFillMicMuteFill />
+                  </button> */}
+                </div>
               </div>
             </div>
           </div>
