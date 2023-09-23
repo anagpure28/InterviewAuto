@@ -7,8 +7,8 @@ import { Scrollbars } from "react-custom-scrollbars-2";
 import { FaAngular, FaReact } from "react-icons/fa";
 import { LiaJava } from "react-icons/lia";
 import { DiNodejs } from "react-icons/di";
-// import { BsFillMicFill } from "react-icons/bs";
-// import { BsFillMicMuteFill } from "react-icons/bs";
+import { BsFillMicFill } from "react-icons/bs";
+import { BsFillMicMuteFill } from "react-icons/bs";
 import TextMsg from "../components/TextMsg";
 import { Box, SkeletonCircle, SkeletonText, useToast } from "@chakra-ui/react";
 import axios from "axios";
@@ -16,13 +16,13 @@ import { useNavigate } from "react-router-dom";
 import boy from "../Images/boy.jpg"
 import VideoChat from "../components/VideoChat";
 import { url } from "../Url/url.js";
-// import SpeechRecognition, {useSpeechRecognition} from "react-speech-recognition";
+import SpeechRecognition, {useSpeechRecognition} from "react-speech-recognition";
 
 const ScreenPage = () => {
   const [text, setText] = useState("");
   const [data, setData] = useState([]);
   const [aiData, setAiData] = useState([]);
-  // const [textToCopy, setTextToCopy] = useState();
+  const [textToCopy, setTextToCopy] = useState();
   const [instantFeedback, setInstantFeedback] = useState(false);
   // console.log(instantFeedback)
   const navigate = useNavigate();
@@ -62,9 +62,17 @@ const ScreenPage = () => {
   };
 
   const handleSubmit = () => {
-
     const newText = inputref.current.value;
     const checked = instantRef.current.value;
+    if(newText === ""){
+      return toast({
+        title: "Please write something",
+        position: "top",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
     updateResponse(you, newText);
     console.log(checked)
 
@@ -87,7 +95,7 @@ const ScreenPage = () => {
         });
       } else {
         setData([...data, newText]);
-        setText("");
+        setText(text ? "" : reset());
       }
     }else{
       axios
@@ -108,7 +116,7 @@ const ScreenPage = () => {
         });
       } else {
         setData([...data, newText]);
-        setText("");
+        setText(text ? "" : reset());
       }
     }
   };
@@ -116,8 +124,8 @@ const ScreenPage = () => {
   const renderContent = (response) => {
     const value = response.value;
     if (Array.isArray(value)) {
-      return value.map((el) => {
-        return el;
+      return value?.map((el,i) => {
+        return {el}
       });
     }
     inputref.current.value = "";
@@ -146,16 +154,21 @@ const ScreenPage = () => {
     }, 3500);
   };
 
-  // const startListening = () =>
-  //   SpeechRecognition.startListening({ continuous: true, language: "en-IN" });
-  // const {
-  //   transcript,
-  //   browserSupportsSpeechRecognition
-  // } = useSpeechRecognition();
+  const startListening = () =>
+    SpeechRecognition.startListening({ continuous: true, language: "en-IN" });
+  const {
+    transcript,
+    resetTranscript,
+    browserSupportsSpeechRecognition
+  } = useSpeechRecognition();
 
-  // if (!browserSupportsSpeechRecognition) {
-  //   return null;
-  // }
+  if (!browserSupportsSpeechRecognition) {
+    return null;
+  }
+
+  function reset(){
+    return resetTranscript
+  }
 
   return (
     <div className="screen-main-cont">
@@ -198,7 +211,7 @@ const ScreenPage = () => {
                 <Scrollbars>
                   <div className="scroll-div">
                     <p style={{marginLeft:"48px", fontSize: "1.2rem"}}>Hello, Are you Ready for the Interview !!</p>
-                    {aiData.length > 0 ? <div style={{ display: "flex", marginTop: "15px", width: "100%" }}>
+                    {aiData?.length > 0 ? <div style={{ display: "flex", marginTop: "15px", width: "100%" }}>
                     <div style={{width: "7%"}}>
                         <div style={{ width: "34px", height: "34px", marginRight: "10px", borderRadius: "50%", border: "2px solid orange" }}>
                           <img src="https://previews.123rf.com/images/goodzone95/goodzone951803/goodzone95180300023/96668201-chatbot-icon-cute-robot-working-behind-laptop-modern-bot-sign-design-smiling-customer-service.jpg" alt="" style={{width: "100%", height: "100%", borderRadius: "50%"}}/>
@@ -245,9 +258,6 @@ const ScreenPage = () => {
                         );
                       }
                     })}
-                  {/* <div className="main-content" onClick={() => setTextToCopy(transcript)}>
-                    {transcript}
-                  </div> */}
                   </div>
                 </Scrollbars>
               </div>
@@ -257,7 +267,7 @@ const ScreenPage = () => {
                   type="text"
                   placeholder="send a message"
                   name="text"
-                  value={text}
+                  value={transcript ? transcript : text}
                   onChange={(e) => setText(e.target.value)}
                 />
                 <div className="screen-input-flex-button">
@@ -270,12 +280,12 @@ const ScreenPage = () => {
                       }}
                     />
                   </button>
-                  {/* <button className="mic" onClick={startListening}>
+                  <button className="mic" onClick={startListening}>
                     <BsFillMicFill />
                   </button>
                   <button className="mic2" onClick={SpeechRecognition.stopListening}>
                     <BsFillMicMuteFill />
-                  </button> */}
+                  </button>
                 </div>
               </div>
             </div>

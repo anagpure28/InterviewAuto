@@ -128,8 +128,11 @@
     color: gray; 
     font-size: 1.3rem;
 }
-.mic:focus,.mic:hover{
+.mic:focus{
     color: green;
+}
+.mic2:focus{
+    color: red;
 }
 .sidebar2-main-cont{
     width: 100%;

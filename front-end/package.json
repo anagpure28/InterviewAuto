@@ -34,6 +34,7 @@
     "react-webcam": "^7.1.1",
     "tw-elements": "^1.0.0-beta2",
     "typescript": "^4.9.5",
+    "vercel": "^32.2.4",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
