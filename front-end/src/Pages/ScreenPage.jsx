@@ -17,16 +17,25 @@ import boy from "../Images/boy.jpg"
 import VideoChat from "../components/VideoChat";
 import { url } from "../Url/url.js";
 import SpeechRecognition, {useSpeechRecognition} from "react-speech-recognition";
+import AutoTyping from "../components/AutoTyping";
 
 const ScreenPage = () => {
   const [text, setText] = useState("");
   const [data, setData] = useState([]);
   const [aiData, setAiData] = useState([]);
-  const [textToCopy, setTextToCopy] = useState();
   const [instantFeedback, setInstantFeedback] = useState(false);
   // console.log(instantFeedback)
   const navigate = useNavigate();
   const toast = useToast();
+
+  // ClipBoard and Editable transcript
+  // const [textToCopy, setTextToCopy] = useState("");
+  // const [isCopied, setCopied] = useClipboard(textToCopy, {
+  //   successDuration: 1000
+  // });
+
+  // const [editedTranscript, setEditedTranscript] = useState("");
+  // const [isEditing, setIsEditing] = useState(false);
 
   const inputref = useRef();
   const instantRef = useRef();
@@ -166,6 +175,32 @@ const ScreenPage = () => {
     return null;
   }
 
+  // // Start Listening
+  // const startListening = () =>
+  //   SpeechRecognition.startListening({ continuous: true, language: "en-IN" });
+  // const {
+  //   transcript,
+  //   resetTranscript,
+  //   browserSupportsSpeechRecognition
+  // } = useSpeechRecognition();
+
+  // // Edit the transcript
+  // const handleEdit = () => {
+  //   setIsEditing(true);
+  //   setEditedTranscript(transcript);
+  // };
+
+  // // Save edited transcript
+  // const handleSave = () => {
+  //   setIsEditing(false);
+  //   setTextToCopy(editedTranscript);
+  //   resetTranscript(editedTranscript);
+  // };
+
+  if (!browserSupportsSpeechRecognition) {
+    return null;
+  }
+
   function reset(){
     return resetTranscript
   }
@@ -210,21 +245,25 @@ const ScreenPage = () => {
               <div>
                 <Scrollbars>
                   <div className="scroll-div">
-                    <p style={{marginLeft:"48px", fontSize: "1.2rem"}}>Hello, Are you Ready for the Interview !!</p>
-                    {aiData?.length > 0 ? <div style={{ display: "flex", marginTop: "15px", width: "100%" }}>
-                    <div style={{width: "7%"}}>
-                        <div style={{ width: "34px", height: "34px", marginRight: "10px", borderRadius: "50%", border: "2px solid orange" }}>
-                          <img src="https://previews.123rf.com/images/goodzone95/goodzone951803/goodzone95180300023/96668201-chatbot-icon-cute-robot-working-behind-laptop-modern-bot-sign-design-smiling-customer-service.jpg" alt="" style={{width: "100%", height: "100%", borderRadius: "50%"}}/>
+                    <p style={{ margin: "10px auto auto 47.5px", fontSize: "1.2rem"}}><AutoTyping /></p>
+                    {aiData?.length > 0 ? 
+                      <div style={{ display: "flex", marginTop: "15px", width: "100%" }}>
+                        <div style={{width: "7%"}}>
+                            <div style={{ width: "34px", height: "34px", marginRight: "10px", borderRadius: "50%", border: "2px solid orange" }}>
+                              <img src="https://previews.123rf.com/images/goodzone95/goodzone951803/goodzone95180300023/96668201-chatbot-icon-cute-robot-working-behind-laptop-modern-bot-sign-design-smiling-customer-service.jpg" alt="" style={{width: "100%", height: "100%", borderRadius: "50%"}}/>
+                            </div>
                         </div>
-                    </div>
-                    <div style={{width: "93%"}}>
-                      <ol style={{ color: "white", marginTop: "3px", fontSize: "1.1rem", width:"100%" }}>
-                        <li>{aiData}</li>
-                      </ol>
-                    </div>
-                  </div>
-                  : ""
-                }
+                        <div style={{width: "93%"}}>
+                          <ol style={{ color: "white", marginTop: "3px", fontSize: "1.1rem", width:"100%" }}>
+                            <li>{aiData}</li>
+                          </ol>
+                        </div>
+                      </div>
+                    : 
+                      <div className="waitingTime">
+                        <p>Please wait for few seconds <br />Your interview will start soon...</p>
+                      </div>
+                    }
                     {response.map((el, i) => {
                       if (el.from == you) {
                         return (
