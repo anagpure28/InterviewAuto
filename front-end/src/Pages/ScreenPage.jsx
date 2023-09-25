@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "../Styles/ScreenPage.css";
 // import SideBar1 from "./SideBar1";
 import SideBar2 from "./SideBar2";
@@ -163,6 +163,54 @@ const ScreenPage = () => {
     }, 3500);
   };
 
+  const [count, setcount] = useState(0)
+  useEffect(()=> {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        console.log("tab is active");
+      } else {
+        setcount((count)=> count + 1);
+      }
+    };
+
+    // Add a visibilitychange event listener to the document
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Clean up the event listener when the component unmounts
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  },[])
+  
+  if(count==1){
+    // alert("You have changed the tab. 2 chances are remaining");
+    toast({
+      title: "You are not allowed to Move out from the Exam window",
+      description: "Warning / Alert No. 1",
+      position: "top",
+      status: "warning",
+      duration: 5000,
+      isClosable: true,
+    });
+  }else if(count==2){
+    // alert("You have changed the tab twice. This is final warning.");
+    toast({
+      title: "This is last warning else you will be terminated",
+      description: "Warning / Alert No. 2",
+      position: "top",
+      status: "error",
+      duration: 5000,
+      isClosable: true,
+    });
+  }else if(count==3){
+    handleEnd(
+      setTimeout(() => {
+        navigate("/dashboard");
+     }, 3500)
+    )
+  }
+
+
   const startListening = () =>
     SpeechRecognition.startListening({ continuous: true, language: "en-IN" });
   const {
@@ -262,6 +310,7 @@ const ScreenPage = () => {
                     : 
                       <div className="waitingTime">
                         <p>Please wait for few seconds <br />Your interview will start soon...</p>
+                        <span className="loader"></span>
                       </div>
                     }
                     {response.map((el, i) => {
@@ -339,8 +388,8 @@ const ScreenPage = () => {
                   <input ref={instantRef} type="checkbox" name="" value={instantFeedback} onChange={(e) => setInstantFeedback(e.target.checked)} />
                   <label htmlFor="">Instant Feedback</label>
                 </div>
-                <button onClick={handleStart}>Start the Interview</button>
-                <button onClick={handleEnd}>End the Interview</button>
+                <button className="start" onClick={handleStart}>Start the Interview</button>
+                <button className="end" onClick={handleEnd}>End the Interview</button>
               </div>
             </div>
           </div>
