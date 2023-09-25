@@ -163,52 +163,54 @@ const ScreenPage = () => {
     }, 3500);
   };
 
-  const [count, setcount] = useState(0)
-  useEffect(()=> {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        console.log("tab is active");
-      } else {
-        setcount((count)=> count + 1);
-      }
-    };
+  // const [count, setcount] = useState(0)
 
-    // Add a visibilitychange event listener to the document
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+  // Tab Warning on change
+  // useEffect(()=> {
+  //   const handleVisibilityChange = () => {
+  //     if (document.visibilityState === "visible") {
+  //       console.log("tab is active");
+  //     } else {
+  //       setcount((count)=> count + 1);
+  //     }
+  //   };
 
-    // Clean up the event listener when the component unmounts
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  },[])
+  //   // Add a visibilitychange event listener to the document
+  //   document.addEventListener("visibilitychange", handleVisibilityChange);
+
+  //   // Clean up the event listener when the component unmounts
+  //   return () => {
+  //     document.removeEventListener("visibilitychange", handleVisibilityChange);
+  //   };
+  // },[count])
   
-  if(count==1){
-    // alert("You have changed the tab. 2 chances are remaining");
-    toast({
-      title: "You are not allowed to Move out from the Exam window",
-      description: "Warning / Alert No. 1",
-      position: "top",
-      status: "warning",
-      duration: 5000,
-      isClosable: true,
-    });
-  }else if(count==2){
-    // alert("You have changed the tab twice. This is final warning.");
-    toast({
-      title: "This is last warning else you will be terminated",
-      description: "Warning / Alert No. 2",
-      position: "top",
-      status: "error",
-      duration: 5000,
-      isClosable: true,
-    });
-  }else if(count==3){
-    handleEnd(
-      setTimeout(() => {
-        navigate("/dashboard");
-     }, 3500)
-    )
-  }
+  // if(count==1){
+  //   alert("You have changed the tab. 2 chances are remaining");
+  //   // toast({
+  //   //   title: "You are not allowed to Move out from the Exam window",
+  //   //   description: "Warning / Alert No. 1",
+  //   //   position: "top",
+  //   //   status: "warning",
+  //   //   duration: 5000,
+  //   //   isClosable: true,
+  //   // });
+  // }else if(count==2){
+  //   alert("You have changed the tab twice. This is final warning.");
+  //   // toast({
+  //   //   title: "This is last warning else you will be terminated",
+  //   //   description: "Warning / Alert No. 2",
+  //   //   position: "top",
+  //   //   status: "error",
+  //   //   duration: 5000,
+  //   //   isClosable: true,
+  //   // });
+  // }else if(count==3){
+  //   handleEnd(
+  //     setTimeout(() => {
+  //       navigate("/dashboard");
+  //    }, 3500)
+  //   )
+  // }
 
 
   const startListening = () =>
