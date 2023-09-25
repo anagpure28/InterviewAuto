@@ -66,10 +66,9 @@ Make Informed Decisions: Based on the evaluation, employers can make informed hi
 
 # Created By:
 ## Frontend
-1. Aniket Nagpure - Interview Panel and Language Page
-2. Santosh Sen - Dashboard, HomePage and Study-Material
+1. Aniket Nagpure - HomePage, Interview Panel and Language Page
+2. Santosh Sen - Dashboard and Study-Material
 
 ## Backend
 1. RamSundar Sivakumar
 2. Ankita Barad
-3. Shubham Pilane
