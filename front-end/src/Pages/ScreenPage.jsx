@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import "../Styles/ScreenPage.css";
 // import SideBar1 from "./SideBar1";
 import SideBar2 from "./SideBar2";
@@ -13,11 +13,14 @@ import TextMsg from "../components/TextMsg";
 import { Box, SkeletonCircle, SkeletonText, useToast } from "@chakra-ui/react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import boy from "../Images/boy.jpg"
+import boy from "../Images/boy.jpg";
 import VideoChat from "../components/VideoChat";
 import { url } from "../Url/url.js";
-import SpeechRecognition, {useSpeechRecognition} from "react-speech-recognition";
+import SpeechRecognition, {
+  useSpeechRecognition,
+} from "react-speech-recognition";
 import AutoTyping from "../components/AutoTyping";
+// import { useReactMediaRecorder } from "react-media-recorder";
 
 const ScreenPage = () => {
   const [text, setText] = useState("");
@@ -28,14 +31,23 @@ const ScreenPage = () => {
   const navigate = useNavigate();
   const toast = useToast();
 
-  // ClipBoard and Editable transcript
+  // const {
+  //   status,
+  //   startRecording,
+  //   stopRecording,
+  //   mediaBlobUrl
+  // } = useReactMediaRecorder({ video: true });
+  // localStorage.setItem("video", mediaBlobUrl);
+
+  // Copy to ClipBoard
   // const [textToCopy, setTextToCopy] = useState("");
   // const [isCopied, setCopied] = useClipboard(textToCopy, {
-  //   successDuration: 1000
+  //   successDuration: 1000,
   // });
 
-  // const [editedTranscript, setEditedTranscript] = useState("");
-  // const [isEditing, setIsEditing] = useState(false);
+  // Editable transcript
+  const [editedTranscript, setEditedTranscript] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
   const inputref = useRef();
   const instantRef = useRef();
@@ -73,7 +85,7 @@ const ScreenPage = () => {
   const handleSubmit = () => {
     const newText = inputref.current.value;
     const checked = instantRef.current.value;
-    if(newText === ""){
+    if (newText === "") {
       return toast({
         title: "Please write something",
         position: "top",
@@ -83,17 +95,17 @@ const ScreenPage = () => {
       });
     }
     updateResponse(you, newText);
-    console.log(checked)
+    console.log(checked);
 
-    if(!instantFeedback){
+    if (!instantFeedback) {
       axios
-      .post(`${url}/chat/submit?feedback=0`, newText)
-      .then((res) => {
-        console.log(res.data);
-        updateResponse(ai, res.data);
-        inputref.current.value = "";
-      })
-      .catch((err) => console.log(err));
+        .post(`${url}/chat/submit?feedback=0`, newText)
+        .then((res) => {
+          console.log(res.data);
+          updateResponse(ai, res.data);
+          inputref.current.value = "";
+        })
+        .catch((err) => console.log(err));
       if (newText == "") {
         toast({
           title: "Please write something",
@@ -106,15 +118,15 @@ const ScreenPage = () => {
         setData([...data, newText]);
         setText(text ? "" : reset());
       }
-    }else{
+    } else {
       axios
-      .post(`${url}/chat/submit?feedback=1`, newText)
-      .then((res) => {
-        console.log(res.data);
-        updateResponse(ai, res.data);
-        inputref.current.value = "";
-      })
-      .catch((err) => console.log(err));
+        .post(`${url}/chat/submit?feedback=1`, newText)
+        .then((res) => {
+          console.log(res.data);
+          updateResponse(ai, res.data);
+          inputref.current.value = "";
+        })
+        .catch((err) => console.log(err));
       if (newText == "") {
         toast({
           title: "Please write something",
@@ -129,12 +141,12 @@ const ScreenPage = () => {
       }
     }
   };
-  
+
   const renderContent = (response) => {
     const value = response.value;
     if (Array.isArray(value)) {
-      return value?.map((el,i) => {
-        return {el}
+      return value?.map((el, i) => {
+        return { el };
       });
     }
     inputref.current.value = "";
@@ -145,9 +157,9 @@ const ScreenPage = () => {
     const payload = { logout: true };
     axios
       .post(`${url}/chat/logout`, payload)
-      .then((res) =>  {
-        console.log(res.data)
-        localStorage.setItem("final-data",JSON.stringify(res.data))
+      .then((res) => {
+        console.log(res.data);
+        localStorage.setItem("final-data", JSON.stringify(res.data));
       })
       .catch((err) => console.log(err));
     toast({
@@ -159,13 +171,27 @@ const ScreenPage = () => {
       isClosable: true,
     });
     setTimeout(() => {
-       navigate("/dashboard");
+      navigate("/dashboard");
     }, 3500);
   };
 
+  useEffect(()=> {
+    const handleClick = (e) => {
+      e.preventDefault();
+      alert('Pasting is not allowed.');
+    }
+
+    document.addEventListener('paste', handleClick);
+
+    // Remove the event listener when the component unmounts
+    return () => {
+      document.removeEventListener('paste', handleClick);
+    };
+  },[])
+
   // const [count, setcount] = useState(0)
 
-  // Tab Warning on change
+  // // Tab Warning on change
   // useEffect(()=> {
   //   const handleVisibilityChange = () => {
   //     if (document.visibilityState === "visible") {
@@ -182,28 +208,28 @@ const ScreenPage = () => {
   //   return () => {
   //     document.removeEventListener("visibilitychange", handleVisibilityChange);
   //   };
-  // },[count])
-  
+  // },[])
+
   // if(count==1){
-  //   alert("You have changed the tab. 2 chances are remaining");
-  //   // toast({
-  //   //   title: "You are not allowed to Move out from the Exam window",
-  //   //   description: "Warning / Alert No. 1",
-  //   //   position: "top",
-  //   //   status: "warning",
-  //   //   duration: 5000,
-  //   //   isClosable: true,
-  //   // });
+  //   // alert("You have changed the tab. 2 chances are remaining");
+  //   toast({
+  //     title: "You are not allowed to Move out from the Exam window",
+  //     description: "Warning / Alert No. 1",
+  //     position: "top",
+  //     status: "warning",
+  //     duration: 5000,
+  //     isClosable: true,
+  //   });
   // }else if(count==2){
-  //   alert("You have changed the tab twice. This is final warning.");
-  //   // toast({
-  //   //   title: "This is last warning else you will be terminated",
-  //   //   description: "Warning / Alert No. 2",
-  //   //   position: "top",
-  //   //   status: "error",
-  //   //   duration: 5000,
-  //   //   isClosable: true,
-  //   // });
+  //   // alert("You have changed the tab twice. This is final warning.");
+  //   toast({
+  //     title: "This is last warning else you will be terminated",
+  //     description: "Warning / Alert No. 2",
+  //     position: "top",
+  //     status: "error",
+  //     duration: 5000,
+  //     isClosable: true,
+  //   });
   // }else if(count==3){
   //   handleEnd(
   //     setTimeout(() => {
@@ -212,53 +238,38 @@ const ScreenPage = () => {
   //   )
   // }
 
-
+  // Start Listening
   const startListening = () =>
     SpeechRecognition.startListening({ continuous: true, language: "en-IN" });
-  const {
-    transcript,
-    resetTranscript,
-    browserSupportsSpeechRecognition
-  } = useSpeechRecognition();
+  const { transcript, resetTranscript, browserSupportsSpeechRecognition } =
+    useSpeechRecognition();
+
+  // Edit the transcript
+  const handleEdit = () => {
+    setIsEditing(true);
+    setEditedTranscript(transcript);
+  };
+
+  // Save edited transcript
+  const handleSave = () => {
+    setIsEditing(false);
+    // setTextToCopy(editedTranscript);
+    setText(editedTranscript);
+    resetTranscript(editedTranscript);
+  };
 
   if (!browserSupportsSpeechRecognition) {
     return null;
   }
 
-  // // Start Listening
-  // const startListening = () =>
-  //   SpeechRecognition.startListening({ continuous: true, language: "en-IN" });
-  // const {
-  //   transcript,
-  //   resetTranscript,
-  //   browserSupportsSpeechRecognition
-  // } = useSpeechRecognition();
-
-  // // Edit the transcript
-  // const handleEdit = () => {
-  //   setIsEditing(true);
-  //   setEditedTranscript(transcript);
-  // };
-
-  // // Save edited transcript
-  // const handleSave = () => {
-  //   setIsEditing(false);
-  //   setTextToCopy(editedTranscript);
-  //   resetTranscript(editedTranscript);
-  // };
-
-  if (!browserSupportsSpeechRecognition) {
-    return null;
-  }
-
-  function reset(){
-    return resetTranscript
+  function reset() {
+    return resetTranscript;
   }
 
   return (
     <div className="screen-main-cont">
       <div className="animate__animated animate__backInDown">
-        <p style={{zIndex: "100"}}>Welcome to {course} Session</p>
+        <p style={{ zIndex: "100" }}>Welcome to {course} Session</p>
       </div>
       <div>
         <div>
@@ -295,37 +306,106 @@ const ScreenPage = () => {
               <div>
                 <Scrollbars>
                   <div className="scroll-div">
-                    <p style={{ margin: "10px auto auto 47.5px", fontSize: "1.2rem"}}><AutoTyping /></p>
-                    {aiData?.length > 0 ? 
-                      <div style={{ display: "flex", marginTop: "15px", width: "100%" }}>
-                        <div style={{width: "7%"}}>
-                            <div style={{ width: "34px", height: "34px", marginRight: "10px", borderRadius: "50%", border: "2px solid orange" }}>
-                              <img src="https://previews.123rf.com/images/goodzone95/goodzone951803/goodzone95180300023/96668201-chatbot-icon-cute-robot-working-behind-laptop-modern-bot-sign-design-smiling-customer-service.jpg" alt="" style={{width: "100%", height: "100%", borderRadius: "50%"}}/>
-                            </div>
+                    <p
+                      style={{
+                        margin: "10px auto auto 47.5px",
+                        fontSize: "1.2rem",
+                      }}
+                    >
+                      <AutoTyping />
+                    </p>
+                    {aiData?.length > 0 ? (
+                      <div
+                        style={{
+                          display: "flex",
+                          marginTop: "15px",
+                          width: "100%",
+                        }}
+                      >
+                        <div style={{ width: "7%" }}>
+                          <div
+                            style={{
+                              width: "34px",
+                              height: "34px",
+                              marginRight: "10px",
+                              borderRadius: "50%",
+                              border: "2px solid orange",
+                            }}
+                          >
+                            <img
+                              src="https://previews.123rf.com/images/goodzone95/goodzone951803/goodzone95180300023/96668201-chatbot-icon-cute-robot-working-behind-laptop-modern-bot-sign-design-smiling-customer-service.jpg"
+                              alt=""
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                borderRadius: "50%",
+                              }}
+                            />
+                          </div>
                         </div>
-                        <div style={{width: "93%"}}>
-                          <ol style={{ color: "white", marginTop: "3px", fontSize: "1.1rem", width:"100%" }}>
+                        <div style={{ width: "93%" }}>
+                          <ol
+                            style={{
+                              color: "white",
+                              marginTop: "3px",
+                              fontSize: "1.1rem",
+                              width: "100%",
+                            }}
+                          >
                             <li>{aiData}</li>
                           </ol>
                         </div>
                       </div>
-                    : 
+                    ) : (
                       <div className="waitingTime">
-                        <p>Please wait for few seconds <br />Your interview will start soon...</p>
+                        <p>
+                          Please wait for few seconds <br />
+                          Your interview will start soon...
+                        </p>
                         <span className="loader"></span>
                       </div>
-                    }
+                    )}
                     {response.map((el, i) => {
                       if (el.from == you) {
                         return (
-                          <div style={{ display: "flex", marginTop: "5px", width: "100%" }}>
-                            <div style={{width: "7%"}}>
-                                <div style={{ width: "34px", height: "34px", marginTop: "-2px", marginRight: "10px", borderRadius: "50%", border: "2px solid green" }}>
-                                    <img src={boy} alt="" style={{width: "100%", height: "100%", borderRadius: "50%"}}/>
-                                </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              marginTop: "5px",
+                              width: "100%",
+                            }}
+                          >
+                            <div style={{ width: "7%" }}>
+                              <div
+                                style={{
+                                  width: "34px",
+                                  height: "34px",
+                                  marginTop: "-2px",
+                                  marginRight: "10px",
+                                  borderRadius: "50%",
+                                  border: "2px solid green",
+                                }}
+                              >
+                                <img
+                                  src={boy}
+                                  alt=""
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    borderRadius: "50%",
+                                  }}
+                                />
+                              </div>
                             </div>
-                            <div style={{width: "93%", marginTop: "-2px"}}>
-                              <ol style={{ color: "white", marginTop: "3px", fontSize: "1.1rem", width:"100%" }}>
+                            <div style={{ width: "93%", marginTop: "-2px" }}>
+                              <ol
+                                style={{
+                                  color: "white",
+                                  marginTop: "3px",
+                                  fontSize: "1.1rem",
+                                  width: "100%",
+                                }}
+                              >
                                 <li>{renderContent(el)}</li>
                               </ol>
                             </div>
@@ -333,14 +413,43 @@ const ScreenPage = () => {
                         );
                       } else {
                         return (
-                          <div style={{ display: "flex", marginTop: "30px", width: "100%" }}>
-                            <div style={{width: "7%"}}>
-                                <div style={{ width: "34px", height: "34px", marginRight: "10px", borderRadius: "50%", border: "2px solid orange" }}>
-                                  <img src="https://previews.123rf.com/images/goodzone95/goodzone951803/goodzone95180300023/96668201-chatbot-icon-cute-robot-working-behind-laptop-modern-bot-sign-design-smiling-customer-service.jpg" alt="" style={{width: "100%", height: "100%", borderRadius: "50%"}}/>
-                                </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              marginTop: "30px",
+                              width: "100%",
+                            }}
+                          >
+                            <div style={{ width: "7%" }}>
+                              <div
+                                style={{
+                                  width: "34px",
+                                  height: "34px",
+                                  marginRight: "10px",
+                                  borderRadius: "50%",
+                                  border: "2px solid orange",
+                                }}
+                              >
+                                <img
+                                  src="https://previews.123rf.com/images/goodzone95/goodzone951803/goodzone95180300023/96668201-chatbot-icon-cute-robot-working-behind-laptop-modern-bot-sign-design-smiling-customer-service.jpg"
+                                  alt=""
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    borderRadius: "50%",
+                                  }}
+                                />
+                              </div>
                             </div>
-                            <div style={{width: "93%"}}>
-                              <ol style={{ color: "white", marginTop: "3px", fontSize: "1.1rem", width:"100%" }}>
+                            <div style={{ width: "93%" }}>
+                              <ol
+                                style={{
+                                  color: "white",
+                                  marginTop: "3px",
+                                  fontSize: "1.1rem",
+                                  width: "100%",
+                                }}
+                              >
                                 <li>{renderContent(el)}</li>
                               </ol>
                             </div>
@@ -352,28 +461,49 @@ const ScreenPage = () => {
                 </Scrollbars>
               </div>
               <div className="screen-input-div">
-                <input
-                  ref={inputref}
-                  type="text"
-                  placeholder="send a message"
-                  name="text"
-                  value={transcript ? transcript : text}
-                  onChange={(e) => setText(e.target.value)}
-                />
+                {isEditing ? (
+                  <input
+                    id="edit"
+                    ref={inputref}
+                    type="text"
+                    placeholder="send a message"
+                    name="text"
+                    value={editedTranscript ? editedTranscript : text}
+                    onChange={(e) => setEditedTranscript(e.target.value)}
+                  />
+                ) : (
+                  <input
+                    id="inputText"
+                    ref={inputref}
+                    type="text"
+                    placeholder="send a message"
+                    name="text"
+                    value={transcript ? transcript : text}
+                    onChange={(e) => setText(e.target.value)}
+                    onClick={handleEdit}
+                  />
+                )}
                 <div className="screen-input-flex-button">
-                  <button className="submitButton" onClick={handleSubmit}>
-                    <RiSendPlane2Fill
-                      style={{
-                        marginLeft: "1rem",
-                        fontSize: "25px",
-                        color: "grey",
-                      }}
-                    />
-                  </button>
+                  {isEditing ? (
+                    <button onClick={handleSave}>Save</button>
+                  ) : (
+                    <button className="submitButton" onClick={handleSubmit}>
+                      <RiSendPlane2Fill
+                        style={{
+                          marginLeft: "1rem",
+                          fontSize: "25px",
+                          color: "grey",
+                        }}
+                      />
+                    </button>
+                  )}
                   <button className="mic" onClick={startListening}>
                     <BsFillMicFill />
                   </button>
-                  <button className="mic2" onClick={SpeechRecognition.stopListening}>
+                  <button
+                    className="mic2"
+                    onClick={SpeechRecognition.stopListening}
+                  >
                     <BsFillMicMuteFill />
                   </button>
                 </div>
@@ -387,11 +517,21 @@ const ScreenPage = () => {
               <VideoChat />
               <div>
                 <div className="checkbox">
-                  <input ref={instantRef} type="checkbox" name="" value={instantFeedback} onChange={(e) => setInstantFeedback(e.target.checked)} />
+                  <input
+                    ref={instantRef}
+                    type="checkbox"
+                    name=""
+                    value={instantFeedback}
+                    onChange={(e) => setInstantFeedback(e.target.checked)}
+                  />
                   <label htmlFor="">Instant Feedback</label>
                 </div>
-                <button className="start" onClick={handleStart}>Start the Interview</button>
-                <button className="end" onClick={handleEnd}>End the Interview</button>
+                <button className="start" onClick={handleStart}>
+                  Start the Interview
+                </button>
+                <button className="end" onClick={handleEnd}>
+                  End the Interview
+                </button>
               </div>
             </div>
           </div>
