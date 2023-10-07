@@ -1,7 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "../Styles/ScreenPage.css";
-// import SideBar1 from "./SideBar1";
-import SideBar2 from "./SideBar2";
 import { RiSendPlane2Fill } from "react-icons/ri";
 import { Scrollbars } from "react-custom-scrollbars-2";
 import { FaAngular, FaReact } from "react-icons/fa";
@@ -9,8 +7,7 @@ import { LiaJava } from "react-icons/lia";
 import { DiNodejs } from "react-icons/di";
 import { BsFillMicFill } from "react-icons/bs";
 import { BsFillMicMuteFill } from "react-icons/bs";
-import TextMsg from "../components/TextMsg";
-import { Box, SkeletonCircle, SkeletonText, useToast } from "@chakra-ui/react";
+import { useToast } from "@chakra-ui/react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import boy from "../Images/boy.jpg";
@@ -20,7 +17,6 @@ import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
 import AutoTyping from "../components/AutoTyping";
-// import { useReactMediaRecorder } from "react-media-recorder";
 
 const ScreenPage = () => {
   const [text, setText] = useState("");
@@ -30,20 +26,6 @@ const ScreenPage = () => {
   // console.log(instantFeedback)
   const navigate = useNavigate();
   const toast = useToast();
-
-  // const {
-  //   status,
-  //   startRecording,
-  //   stopRecording,
-  //   mediaBlobUrl
-  // } = useReactMediaRecorder({ video: true });
-  // localStorage.setItem("video", mediaBlobUrl);
-
-  // Copy to ClipBoard
-  // const [textToCopy, setTextToCopy] = useState("");
-  // const [isCopied, setCopied] = useClipboard(textToCopy, {
-  //   successDuration: 1000,
-  // });
 
   // Editable transcript
   const [editedTranscript, setEditedTranscript] = useState("");
@@ -175,68 +157,71 @@ const ScreenPage = () => {
     }, 3500);
   };
 
-  useEffect(()=> {
+  useEffect(() => {
     const handleClick = (e) => {
       e.preventDefault();
-      alert('Pasting is not allowed.');
-    }
+      alert("Pasting is not allowed.");
+    };
 
-    document.addEventListener('paste', handleClick);
+    document.addEventListener("paste", handleClick);
 
     // Remove the event listener when the component unmounts
     return () => {
-      document.removeEventListener('paste', handleClick);
+      document.removeEventListener("paste", handleClick);
     };
-  },[])
+  }, []);
 
-  // const [count, setcount] = useState(0)
+  const [count, setcount] = useState(0);
 
-  // // Tab Warning on change
-  // useEffect(()=> {
-  //   const handleVisibilityChange = () => {
-  //     if (document.visibilityState === "visible") {
-  //       console.log("tab is active");
-  //     } else {
-  //       setcount((count)=> count + 1);
-  //     }
-  //   };
+  // Tab Warning on change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        console.log("tab is active");
+      } else {
+        setcount((count) => count + 1);
+      }
+    };
 
-  //   // Add a visibilitychange event listener to the document
-  //   document.addEventListener("visibilitychange", handleVisibilityChange);
+    // Add a visibilitychange event listener to the document
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
-  //   // Clean up the event listener when the component unmounts
-  //   return () => {
-  //     document.removeEventListener("visibilitychange", handleVisibilityChange);
-  //   };
-  // },[])
+    // Clean up the event listener when the component unmounts
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [count]);
 
-  // if(count==1){
-  //   // alert("You have changed the tab. 2 chances are remaining");
-  //   toast({
-  //     title: "You are not allowed to Move out from the Exam window",
-  //     description: "Warning / Alert No. 1",
-  //     position: "top",
-  //     status: "warning",
-  //     duration: 5000,
-  //     isClosable: true,
-  //   });
-  // }else if(count==2){
-  //   // alert("You have changed the tab twice. This is final warning.");
-  //   toast({
-  //     title: "This is last warning else you will be terminated",
-  //     description: "Warning / Alert No. 2",
-  //     position: "top",
-  //     status: "error",
-  //     duration: 5000,
-  //     isClosable: true,
-  //   });
-  // }else if(count==3){
-  //   handleEnd(
-  //     setTimeout(() => {
-  //       navigate("/dashboard");
-  //    }, 3500)
-  //   )
-  // }
+  // Alert counting
+  useEffect(() => {
+    if (count == 1) {
+      // alert("You have changed the tab. 2 chances are remaining");
+      toast({
+        title: "You are not allowed to Move out from the Exam window",
+        description: "Warning / Alert No. 1",
+        position: "top",
+        status: "warning",
+        duration: 5000,
+        isClosable: true,
+      });
+    } else if (count == 2) {
+      // alert("You have changed the tab twice. This is final warning.");
+      toast({
+        title: "This is last warning else you will be terminated",
+        description: "Warning / Alert No. 2",
+        position: "top",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } else if (count == 3) {
+      handleEnd(
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 3500)
+      );
+    }
+  }, [count]);
 
   // Start Listening
   const startListening = () =>

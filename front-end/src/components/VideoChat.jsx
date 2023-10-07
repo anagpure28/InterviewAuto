@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useRef } from "react";
 import Webcam from "react-webcam";
 
 const VideoChat = () => {
-  const webcamRef = React.useRef(null);
+  const webcamRef = useRef(null);
 
   return (
     <div>
