@@ -33,6 +33,10 @@ coverage/
 .npm/
 .eslintcache
 
+# Markdown docs (keep README.md tracked)
+*.md
+!README.md
+
 # Build output
 dist/
 build/

@@ -5,6 +5,7 @@ const authRoute = express.Router();
 const { UserModel } = require("../Models/user.model");
 const { dbReady } = require("../Config/db");
 const { signToken, protect } = require("../Middleware/auth");
+const { block } = require("../Utils/tokenBlocklist");
 const { isValidEmail } = require("../Utils/validate");
 
 const asyncHandler = (fn) => (req, res, next) =>
@@ -97,6 +98,18 @@ authRoute.get(
     const user = await UserModel.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: "User not found." });
     res.json({ user: publicUser(user), data: user.data || [] });
+  })
+);
+
+/* ----------------------------- POST /auth/logout -------------------------- */
+// Signs the USER out (different from /chat/logout, which ends an interview).
+// Revokes the current token so it can no longer be used, even before it expires.
+authRoute.post(
+  "/logout",
+  protect,
+  asyncHandler(async (req, res) => {
+    block(req.token, req.tokenExp);
+    res.json({ msg: "Logged out successfully." });
   })
 );
 

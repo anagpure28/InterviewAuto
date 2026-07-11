@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { isBlocked } = require("../Utils/tokenBlocklist");
 
 const JWT_SECRET = process.env.JWT_SECRET || "change-me-in-production";
 const JWT_EXPIRES = process.env.JWT_EXPIRES || "7d";
@@ -26,9 +27,18 @@ function protect(req, res, next) {
       .json({ msg: "Authentication required. Please log in." });
   }
 
+  if (isBlocked(token)) {
+    return res
+      .status(401)
+      .json({ msg: "You have been logged out. Please log in again." });
+  }
+
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = { id: decoded.id, email: decoded.email };
+    // Expose the raw token + its expiry so handlers (e.g. logout) can revoke it.
+    req.token = token;
+    req.tokenExp = decoded.exp;
     next();
   } catch (err) {
     return res
