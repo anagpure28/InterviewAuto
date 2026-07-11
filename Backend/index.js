@@ -10,7 +10,17 @@ const gemini = require("./Config/gemini");
 const app = express();
 const PORT = process.env.PORT || 3030;
 
-app.use(cors());
+// CORS — allow the browser frontend (any origin) to call the API, including the
+// Authorization header we send on every protected /chat call. Explicitly
+// handling OPTIONS ensures the preflight for POSTs with a JSON body + auth
+// header always succeeds.
+const corsOptions = {
+  origin: true, // reflect the request origin (works for localhost:3000, Vercel, etc.)
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "x-session-id"],
+};
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // handle preflight for every route
 
 // Body parsing — the frontend sends a few different content types:
 //  - JSON              { prompt: "..." }        -> express.json()
