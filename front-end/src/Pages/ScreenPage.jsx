@@ -8,11 +8,10 @@ import { DiNodejs } from "react-icons/di";
 import { BsFillMicFill } from "react-icons/bs";
 import { BsFillMicMuteFill } from "react-icons/bs";
 import { useToast } from "@chakra-ui/react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import boy from "../Images/boy.jpg";
 import VideoChat from "../components/VideoChat";
-import { url } from "../Url/url.js";
+import api from "../Url/api.js";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
@@ -38,35 +37,33 @@ const ScreenPage = () => {
 
   const [response, setResponse] = useState([]);
 
-  let course = localStorage.getItem("course") || "Interview";
+  // CourseRoute guarantees a course is set before this page ever renders.
+  const course = localStorage.getItem("course");
 
   const updateResponse = (from, value) => {
     setResponse((response) => [...response, { from, value }]);
   };
 
   const handleStart = () => {
-    if (!course) {
-      toast({
-        title: "Select select course first",
-        position: "top",
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
+    api
+      .post(`/chat/start?sub=${course}`)
+      .then((res) => {
+        setAiData(res.data);
+      })
+      .catch((err) => {
+        console.log(err);
+        toast({
+          title: err?.response?.data?.msg || "Could not start the interview.",
+          position: "top",
+          status: "error",
+          duration: 4000,
+          isClosable: true,
+        });
       });
-    } else {
-      axios
-        .post(`${url}/chat/start?sub=${course}`)
-        .then((res) => {
-          console.log(res.data);
-          setAiData(res.data);
-        })
-        .catch((err) => console.log(err));
-    }
   };
 
   const handleSubmit = () => {
     const newText = inputref.current.value;
-    const checked = instantRef.current.value;
     if (newText === "") {
       return toast({
         title: "Please write something",
@@ -77,51 +74,30 @@ const ScreenPage = () => {
       });
     }
     updateResponse(you, newText);
-    console.log(checked);
 
-    if (!instantFeedback) {
-      axios
-        .post(`${url}/chat/submit?feedback=0`, newText)
-        .then((res) => {
-          console.log(res.data);
-          updateResponse(ai, res.data);
-          inputref.current.value = "";
-        })
-        .catch((err) => console.log(err));
-      if (newText == "") {
+    // feedback=1 asks the interviewer for instant feedback, 0 just moves on.
+    const feedbackFlag = instantFeedback ? 1 : 0;
+    // Send the answer as JSON { prompt } — the backend's recommended, robust
+    // shape (it also accepts a raw string, but JSON is unambiguous).
+    api
+      .post(`/chat/submit?feedback=${feedbackFlag}`, { prompt: newText })
+      .then((res) => {
+        updateResponse(ai, res.data);
+        inputref.current.value = "";
+      })
+      .catch((err) => {
+        console.log(err);
         toast({
-          title: "Please write something",
+          title: err?.response?.data?.msg || "Could not submit your answer.",
           position: "top",
-          status: "warning",
-          duration: 3000,
+          status: "error",
+          duration: 4000,
           isClosable: true,
         });
-      } else {
-        setData([...data, newText]);
-        setText(text ? "" : reset());
-      }
-    } else {
-      axios
-        .post(`${url}/chat/submit?feedback=1`, newText)
-        .then((res) => {
-          console.log(res.data);
-          updateResponse(ai, res.data);
-          inputref.current.value = "";
-        })
-        .catch((err) => console.log(err));
-      if (newText == "") {
-        toast({
-          title: "Please write something",
-          position: "top",
-          status: "warning",
-          duration: 3000,
-          isClosable: true,
-        });
-      } else {
-        setData([...data, newText]);
-        setText(text ? "" : reset());
-      }
-    }
+      });
+
+    setData([...data, newText]);
+    setText(text ? "" : reset());
   };
 
   const renderContent = (response) => {
@@ -136,25 +112,35 @@ const ScreenPage = () => {
   };
 
   const handleEnd = () => {
-    const payload = { logout: true };
-    axios
-      .post(`${url}/chat/logout`, payload)
+    api
+      .post(`/chat/logout`, {})
       .then((res) => {
-        console.log(res.data);
+        // res.data is the JSON rubric scores { TechnicalKnowledge, ... average }
         localStorage.setItem("final-data", JSON.stringify(res.data));
+        // Re-lock /screen: a new interview requires picking a language again.
+        localStorage.removeItem("course");
+        toast({
+          title: "Your Interview has been Ended!!",
+          description: "Moving towards dashboard",
+          position: "top",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 3500);
       })
-      .catch((err) => console.log(err));
-    toast({
-      title: "Your Interview has been Ended!!",
-      description: "Moving towards dashboard",
-      position: "top",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
-    setTimeout(() => {
-      navigate("/dashboard");
-    }, 3500);
+      .catch((err) => {
+        console.log(err);
+        toast({
+          title: err?.response?.data?.msg || "Could not end the interview.",
+          position: "top",
+          status: "error",
+          duration: 4000,
+          isClosable: true,
+        });
+      });
   };
 
   useEffect(() => {

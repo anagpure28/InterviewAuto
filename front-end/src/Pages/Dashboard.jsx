@@ -7,7 +7,14 @@ import RadarChart from './Chart';
 const Dashboard = () => {
   // Sample data (Replace this with your data)
   const data =  localStorage.getItem('final-data');
-  const parseData=JSON.parse(data)
+  // Guard against a missing / unparseable result so the dashboard never crashes
+  // (e.g. a logged-in user who lands here before finishing an interview).
+  let parseData = {};
+  try {
+    parseData = JSON.parse(data) || {};
+  } catch {
+    parseData = {};
+  }
   // console.log(parseData)
   // console.log(parseData.TechnicalKnowledge)
   useEffect(() => {

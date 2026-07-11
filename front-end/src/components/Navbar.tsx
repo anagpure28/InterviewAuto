@@ -1,8 +1,10 @@
 import { Fragment } from "react";
 import { Disclosure, Menu, Transition } from "@headlessui/react";
 import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { Link, NavLink } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from "../Images/logo.png";
+import api from "../Url/api.js";
+import { getUser, isAuthenticated, clearAuth } from "../utils/auth.js";
 
 const navigation = [
   { name: "Dashboard", path: "/dashboard", current: false },
@@ -16,6 +18,25 @@ function classNames(...classes: string[]) {
 }
 
 export default function Navbar(): JSX.Element {
+  const navigate = useNavigate();
+  const loggedIn = isAuthenticated();
+  const user = getUser();
+
+  // Sign the user out: revoke the token server-side (best-effort), clear local
+  // auth, then send them to the login page.
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout", {});
+    } catch (err) {
+      // Even if the revoke call fails (e.g. token already expired), we still
+      // clear locally so the user is signed out on this device.
+      console.log(err);
+    } finally {
+      clearAuth();
+      navigate("/login");
+    }
+  };
+
   return (
     <Disclosure as="nav" className="bg-gray-800 sticky top-0 z-2">
       {({ open }: { open: boolean }) => (
@@ -97,35 +118,41 @@ export default function Navbar(): JSX.Element {
                     leaveTo="transform opacity-0 scale-95"
                   >
                     <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                      <Menu.Item>
-                        {({ active }: { active: boolean }) => (
-                          <a
-                            href="#"
-                            className={classNames(
-                              active ? "bg-gray-100" : "",
-                              "block px-4 py-2 text-sm text-gray-700"
+                      {loggedIn ? (
+                        <>
+                          <div className="block px-4 py-2 text-sm text-gray-500 border-b truncate">
+                            {user?.name || user?.email || "Signed in"}
+                          </div>
+                          <Menu.Item>
+                            {({ active }: { active: boolean }) => (
+                              <Link
+                                to="/dashboard"
+                                className={classNames(
+                                  active ? "bg-gray-100" : "",
+                                  "block px-4 py-2 text-sm text-gray-700"
+                                )}
+                              >
+                                Dashboard
+                              </Link>
                             )}
-                          >
-                            Your Profile
-                          </a>
-                        )}
-                      </Menu.Item>
-                      <Menu.Item>
-                        {({ active }: { active: boolean }) => (
-                          <a
-                            href="#"
-                            className={classNames(
-                              active ? "bg-gray-100" : "",
-                              "block px-4 py-2 text-sm text-gray-700"
+                          </Menu.Item>
+                          <Menu.Item>
+                            {({ active }: { active: boolean }) => (
+                              <button
+                                onClick={handleLogout}
+                                className={classNames(
+                                  active ? "bg-gray-100" : "",
+                                  "block w-full text-left px-4 py-2 text-sm text-gray-700"
+                                )}
+                              >
+                                Sign Out
+                              </button>
                             )}
-                          >
-                            Settings
-                          </a>
-                        )}
-                      </Menu.Item>
-                      <Menu.Item>
-                        {({ active }: { active: boolean }) => {
-                          return (
+                          </Menu.Item>
+                        </>
+                      ) : (
+                        <Menu.Item>
+                          {({ active }: { active: boolean }) => (
                             <Link
                               to="/login"
                               className={classNames(
@@ -135,9 +162,9 @@ export default function Navbar(): JSX.Element {
                             >
                               Sign In
                             </Link>
-                          );
-                        }}
-                      </Menu.Item>
+                          )}
+                        </Menu.Item>
+                      )}
                     </Menu.Items>
                   </Transition>
                 </Menu>

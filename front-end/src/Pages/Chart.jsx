@@ -4,9 +4,13 @@ import { initTE, Chart } from 'tw-elements';
 const RadarChart = () => {
   // Ref to the chart container element
   const data =  localStorage.getItem('final-data');
-  const parseData=JSON.parse(data)
-  console.log(parseData)
-  console.log([parseData])
+  // Guard against missing / unparseable results so the chart never crashes.
+  let parseData = {};
+  try {
+    parseData = JSON.parse(data) || {};
+  } catch {
+    parseData = {};
+  }
   const chartRef = useRef();
 
   useEffect(() => {
@@ -19,7 +23,7 @@ const RadarChart = () => {
           {
             label: ' Meeting Score',
             
-            data: [parseData.CommunicationSkills,parseData.CriticalThinking,parseData.ProblemSolving,parseData.TechnicalKnowledge,parseData.UoF],
+            data: [parseData.CommunicationSkills || 0,parseData.CriticalThinking || 0,parseData.ProblemSolving || 0,parseData.TechnicalKnowledge || 0,parseData.UoF || 0],
           },
         ],
       },
