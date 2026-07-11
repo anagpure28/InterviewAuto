@@ -1,211 +1,250 @@
 const express = require("express");
 const userRoute = express.Router();
-const { Configuration, OpenAIApi } = require("openai");
 
-const config = new Configuration({
-  apiKey: process.env.AIKey,
-});
+const gemini = require("../Config/gemini");
+const { getSession, resetSession } = require("../Utils/sessions");
+const {
+  COURSE_TOPICS,
+  ALLOWED_COURSES,
+  extractPrompt,
+  normaliseCourse,
+} = require("../Utils/validate");
+const { UserModel } = require("../Models/user.model");
+const { dbReady } = require("../Config/db");
+const { protect } = require("../Middleware/auth");
 
-const openai = new OpenAIApi(config);
+/**
+ * Wrap an async route handler so thrown errors go to the error middleware
+ * instead of crashing the process / hanging the request.
+ */
+const asyncHandler = (fn) => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
 
-let ChatHistory = [];
+/** System persona shared by the interview endpoints. */
+function interviewerSystemPrompt(course) {
+  return `You are "Aria", a friendly but rigorous senior technical interviewer conducting a spoken mock interview for a ${course} developer role.
 
-let user = {}
+Rules you MUST follow:
+- Ask exactly ONE question at a time. Never number your questions or ask multiple things at once.
+- Keep questions concise and conversational (1-3 sentences), as if speaking aloud.
+- Start easy and progressively increase difficulty based on the candidate's answers (adaptive interviewing).
+- Do NOT reveal the answer unless explicitly asked for feedback.
+- Never repeat a question you have already asked.
+- Stay strictly on ${course} and closely related computer-science fundamentals.
+- Do not include markdown, code fences, or role labels in your questions — just the plain question text.`;
+}
 
-userRoute.post("/test", async (req, res) => {
-  const { prompt } = req.body;
-  ChatHistory.push({ role: "user", content: prompt });
-  try {
-    const completion = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
-      messages: ChatHistory,
+/* -------------------------------------------------------------------------- */
+/*  General smart Q&A endpoint (POST /chat/test)                              */
+/*  Answers arbitrary questions clearly — useful for a general assistant.     */
+/* -------------------------------------------------------------------------- */
+userRoute.post(
+  "/test",
+  asyncHandler(async (req, res) => {
+    const prompt = extractPrompt(req);
+    if (!prompt) {
+      return res
+        .status(400)
+        .json({ msg: "A non-empty 'prompt' is required." });
+    }
+
+    const session = getSession(req);
+    session.history.push({ role: "user", content: prompt });
+
+    const reply = await gemini.generateText(session.history, {
+      systemInstruction:
+        "You are a concise, knowledgeable assistant. Answer clearly and accurately. Use plain text unless code is explicitly requested.",
+      temperature: 0.7,
     });
-    ChatHistory.push(completion.data.choices[0].message);
-    console.log(completion.data.choices[0].message);
-    res.send(completion.data.choices[0].message);
-  } catch (err) {
-    res.status(400).json({ msg: err });
-  }
-});
 
-userRoute.post("/start", async (req, res) => {
-  const params = req.query.sub;
-  user.email = req.body.email;
-  user.course = params;
-  let sub = "";
-  ChatHistory = [];
-  question = [];
-  if (params === "Node") {
-    sub = `Node.js
-            JavaScript
-            Asynchronous
-            Event Loop
-            Callback
-            Promise
-            Async/Await
-            HTTP
-            Express.js
-            Middleware
-            Routing
-            API
-            NPM (Node Package Manager)
-            Package.json
-            Modules
-            CommonJS`;
-  } else if (params == "React") {
-    sub = `JSX (JavaScript XML)
-            Components
-            State
-            Props
-            Rendering
-            Virtual DOM
-            Hooks (useState, useEffect, etc.)
-            Functional Components
-            Class Components
-            Lifecycle Methods (e.g., componentDidMount, componentDidUpdate)
-            Reconciliation
-            React Router
-            React Context API
-            Redux
-            Flux Architecture
-            Actions
-            Reducers
-            Store`;
-  } else if (params == "Java") {
-    sub = `abstract
-            assert
-            boolean
-            break
-            byte
-            case
-            catch
-            char
-            class
-            const (deprecated and not used)
-            continue
-            default
-            do
-            double
-            else
-            enum (added in Java 5)
-            extends
-            final
-            finally
-            float
-            for
-            goto (not used)
-            if
-            implements
-            import
-            instanceof
-            int
-            interface
-            long
-            native
-            new`;
-  }
+    session.history.push({ role: "model", content: reply });
+    res.json({ reply });
+  })
+);
 
-  ChatHistory.push({
-    role: "user",
-    content: `Act as an interviewer and ask me exactly one question from the below topics. ${sub}`,
-  });
+/* -------------------------------------------------------------------------- */
+/*  Start an interview (POST /chat/start?sub=React)                           */
+/*  Returns the first question as a plain string (frontend renders it raw).   */
+/* -------------------------------------------------------------------------- */
+userRoute.post(
+  "/start",
+  protect,
+  asyncHandler(async (req, res) => {
+    const course = normaliseCourse(req.query.sub || (req.body && req.body.course));
+    if (!course) {
+      return res.status(400).json({
+        msg: `Invalid or missing course. Choose one of: ${ALLOWED_COURSES.join(", ")}.`,
+      });
+    }
 
-  try {
-    const completion = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
-      messages: ChatHistory,
-    });
-    ChatHistory.push(completion.data.choices[0].message);
-    question.push(completion.data.choices[0].message.content);
-    res.send(completion.data.choices[0].message.content);
-  } catch (err) {
-    res.status(400).json({ msg: err });
-  }
-});
+    const session = resetSession(req);
+    session.course = course;
+    // Identity comes from the verified token, not the request body.
+    session.email = req.user.email;
 
-userRoute.post("/submit", async (req, res) => {
-  try {
-    const { prompt } = req.body;
-    let feedback = req.query.feedback;
-    console.log(feedback);
-    if (feedback == 1) feedback = "do";
-    else feedback = "Don't";
-    ChatHistory.push({
+    const topics = COURSE_TOPICS[course].join("\n- ");
+    session.history.push({
       role: "user",
-      content: `${prompt} . this is my response to the above question keep a note of it  and ${feedback} provide a feed back and ask the next question in the interview.`,
+      content: `Begin the interview. Ask me your first question. Pick from these ${course} topics:\n- ${topics}`,
     });
-    console.log(ChatHistory, feedback);
 
-    const completion = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
-      messages: ChatHistory,
+    const question = await gemini.generateText(session.history, {
+      systemInstruction: interviewerSystemPrompt(course),
     });
-    ChatHistory.push(completion.data.choices[0].message);    
-    res.send(completion.data.choices[0].message.content);
-  } catch (err) {
-    res.status(400).json({ msg: err.message });
-  }
-});
 
-userRoute.post("/next", async (req, res) => {
-  try {
-    ChatHistory.push({
+    session.history.push({ role: "model", content: question });
+    session.questions.push(question);
+
+    res.send(question);
+  })
+);
+
+/* -------------------------------------------------------------------------- */
+/*  Submit an answer (POST /chat/submit?feedback=0|1)                         */
+/*  feedback=1 -> give instant feedback; feedback=0 -> just move on.          */
+/*  Returns the AI's reply (feedback + next question) as a plain string.      */
+/* -------------------------------------------------------------------------- */
+userRoute.post(
+  "/submit",
+  protect,
+  asyncHandler(async (req, res) => {
+    const answer = extractPrompt(req);
+    if (!answer) {
+      return res
+        .status(400)
+        .json({ msg: "Please provide your answer text." });
+    }
+
+    const session = getSession(req);
+    if (!session.course || session.history.length === 0) {
+      return res
+        .status(409)
+        .json({ msg: "No active interview. Call /chat/start first." });
+    }
+
+    const wantsFeedback = String(req.query.feedback) === "1";
+    const instruction = wantsFeedback
+      ? "Briefly (1-2 sentences) give constructive feedback on my answer above, then ask the next question."
+      : "Note my answer silently (no feedback) and simply ask the next question.";
+
+    session.history.push({
       role: "user",
-      content: `Ask the next question and not be included in ${JSON.stringify(
-        question
+      content: `My answer: "${answer}".\n${instruction} Do not repeat any question you already asked: ${JSON.stringify(
+        session.questions
       )}`,
     });
 
-    const completion = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
-      messages: ChatHistory,
+    const reply = await gemini.generateText(session.history, {
+      systemInstruction: interviewerSystemPrompt(session.course),
     });
-    ChatHistory.push(completion.data.choices[0].message);
-    question.push(completion.data.choices[0].message.content);
-    res.send(completion.data.choices[0].message.content);
-  } catch (err) {
-    res.status(400).json({ msg: err });
-  }
-});
 
-userRoute.post("/logout", async (req, res) => {
-  try {
-    ChatHistory.push({
+    session.history.push({ role: "model", content: reply });
+    session.questions.push(reply);
+
+    res.send(reply);
+  })
+);
+
+/* -------------------------------------------------------------------------- */
+/*  Skip to the next question (POST /chat/next)                               */
+/* -------------------------------------------------------------------------- */
+userRoute.post(
+  "/next",
+  protect,
+  asyncHandler(async (req, res) => {
+    const session = getSession(req);
+    if (!session.course || session.history.length === 0) {
+      return res
+        .status(409)
+        .json({ msg: "No active interview. Call /chat/start first." });
+    }
+
+    session.history.push({
       role: "user",
-      content: `Based on the above questions and answers give a  feedback   using the following rubrics
-          Technical Knowledge: The interviewer will gauge your understanding of core technical concepts related to the field you're being interviewed for. This could include knowledge of programming languages, algorithms, data structures, specific frameworks, or relevant technologies.
-    
-    Problem-Solving Skills: You might be presented with hypothetical scenarios or theoretical problems to solve. The interviewer will assess your ability to approach problems logically, break them down into smaller parts, and devise solutions using your technical knowledge.
-    
-    Critical Thinking: Your capacity to analyze information critically will be examined. This involves evaluating various options, considering pros and cons, and selecting the most appropriate solution or approach.
-    
-    Communication Skills: It's not just about knowing the answers; you should be able to articulate your thoughts effectively. Clear and concise communication is vital in a technical role, as you may need to collaborate with teammates or explain complex concepts to non-technical stakeholders.
-    
-    Understanding of Fundamentals: A solid grasp of the foundational principles is crucial. The interviewer may ask questions about basic concepts in the field to assess whether you have a strong understanding of the fundamentals.
-    Rate each key out of 10 and  and give the response in json format and calculate the average `,
+      content: `Ask the next question. Do not repeat any of these already-asked questions: ${JSON.stringify(
+        session.questions
+      )}`,
     });
 
-    const completion = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
-      messages: ChatHistory,
+    const question = await gemini.generateText(session.history, {
+      systemInstruction: interviewerSystemPrompt(session.course),
     });
-    ChatHistory.push(completion.data.choices[0].message);
-    let data = JSON.parse(completion.data.choices[0].message.content);
-    let result ={};
-    console.log(data);
-    
-    result.TechnicalKnowledge = data["Technical Knowledge"];
-    result.ProblemSolving = data["Problem-Solving Skills"];
-    result.CriticalThinking = data["Critical Thinking"];
-    result.CommunicationSkills = data["Communication Skills"];
-    result.UoF = data["Understanding of Fundamentals"];
-    console.log(result);
-    user.data = result;
 
-    res.send(result);
-  } catch (err) {
-    res.status(400).json({ msg: err });
-  }
-});
+    session.history.push({ role: "model", content: question });
+    session.questions.push(question);
+
+    res.send(question);
+  })
+);
+
+/* -------------------------------------------------------------------------- */
+/*  End the interview and score it (POST /chat/logout)                        */
+/*  Returns a JSON object with the five rubric scores + average.             */
+/* -------------------------------------------------------------------------- */
+const clampScore = (v) => {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(10, Math.round(n * 10) / 10));
+};
+
+userRoute.post(
+  "/logout",
+  protect,
+  asyncHandler(async (req, res) => {
+    const session = getSession(req);
+    if (!session.course || session.history.length === 0) {
+      return res
+        .status(409)
+        .json({ msg: "No active interview to evaluate." });
+    }
+
+    session.history.push({
+      role: "user",
+      content: `The interview is over. Evaluate my overall performance across the whole conversation using these rubrics, each scored 0-10:
+- "Technical Knowledge": understanding of core ${session.course} concepts.
+- "Problem-Solving Skills": logical, structured approach to problems.
+- "Critical Thinking": weighing options and choosing sound solutions.
+- "Communication Skills": clarity and articulation of answers.
+- "Understanding of Fundamentals": grasp of foundational principles.
+
+Respond ONLY with a JSON object using exactly these keys and numeric values:
+{"Technical Knowledge": <number>, "Problem-Solving Skills": <number>, "Critical Thinking": <number>, "Communication Skills": <number>, "Understanding of Fundamentals": <number>}`,
+    });
+
+    const data = await gemini.generateJson(session.history, {
+      systemInstruction: interviewerSystemPrompt(session.course),
+      temperature: 0.3,
+    });
+
+    const result = {
+      TechnicalKnowledge: clampScore(data["Technical Knowledge"]),
+      ProblemSolving: clampScore(data["Problem-Solving Skills"]),
+      CriticalThinking: clampScore(data["Critical Thinking"]),
+      CommunicationSkills: clampScore(data["Communication Skills"]),
+      UoF: clampScore(data["Understanding of Fundamentals"]),
+    };
+    const scores = Object.values(result);
+    result.average =
+      Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10;
+
+    // Persist if we have an email and a live DB connection (best-effort).
+    if (session.email && dbReady()) {
+      try {
+        await UserModel.findOneAndUpdate(
+          { email: session.email },
+          {
+            $setOnInsert: { email: session.email, course: session.course },
+            $push: { data: { ...result, createdAt: new Date() } },
+          },
+          { upsert: true, new: true }
+        );
+      } catch (err) {
+        console.warn(`[logout] Failed to persist result: ${err.message}`);
+      }
+    }
+
+    res.json(result);
+  })
+);
 
 module.exports = { userRoute };

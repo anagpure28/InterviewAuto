@@ -5,18 +5,18 @@
   "main": "index.js",
   "scripts": {
     "server": "nodemon index.js",
+    "start": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.20.2",
+    "@google/generative-ai": "^0.24.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "mongoose": "^7.4.1",
-    "nodemon": "^3.0.1",
-    "openai": "^3.3.0"
+    "nodemon": "^3.0.1"
   }
 }
