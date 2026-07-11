@@ -4,6 +4,7 @@ import { useToast } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import VideoChat from "../components/VideoChat";
+import { url } from "../Url/url";
 
 const SideBar2 = () => {
   const toast = useToast();
@@ -23,7 +24,7 @@ const SideBar2 = () => {
       });
     } else {
       axios
-        .post(`http://localhost:3030/chat/start?sub=${course}`, payload)
+        .post(`${url}/chat/start?sub=${course}`, payload)
         .then((res) => console.log(res.data))
         // setAiData(res.data)
         .catch((err) => console.log(err));
@@ -33,7 +34,7 @@ const SideBar2 = () => {
   const handleEnd = () => {
     const payload = { logout: true };
     axios
-      .post(`http://localhost:3030/chat/logout`, payload)
+      .post(`${url}/chat/logout`, payload)
       .then((res) => console.log(res.data))
       .catch((err) => console.log(err));
     // toast({

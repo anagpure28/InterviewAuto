@@ -8,6 +8,7 @@ import TextMsg from "../components/TextMsg";
 import { useToast } from "@chakra-ui/react";
 import axios from "axios";
 import AiMsg from "../components/AiMsg";
+import { url } from "../Url/url";
 
 const SideBar1 = () => {
   const [text, setText] = useState("");
@@ -25,7 +26,7 @@ const SideBar1 = () => {
 
   const handlesend = () => {
     axios
-      .post(`http://localhost:3030/chat/start?sub=${course}`)
+      .post(`${url}/chat/start?sub=${course}`)
       .then((res) => {
         console.log(res.data);
         setAiData(res.data);
@@ -39,7 +40,7 @@ const SideBar1 = () => {
   //     title: text,
   //   };
   //   axios
-  //     .post(`http://localhost:3030/chat/submit`, newText)
+  //     .post(`${url}/chat/submit`, newText)
   //     .then((res) => {
   //       console.log(res.data);
   //       setAiData(res.data);
