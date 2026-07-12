@@ -1,5 +1,4 @@
 import React, { useState,useEffect } from 'react';
-import SkillsTable from './Skill';
 import MarksTable from './Marks';
 import RadarChart from './Chart';
 

@@ -1,19 +1,17 @@
 /* Add any other custom styling as needed for animations, chatbot images, etc. */
-.openai-page {
-    .parallax-content {
-      width: 100%;
-      height: 700px; /* Adjust the height as needed */
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      color: #fff;
-      padding: 20px;
-      /* opacity: 0.6; */
-    }
+.openai-page .parallax-content {
+    width: 100%;
+    height: 700px; /* Adjust the height as needed */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #fff;
+    padding: 20px;
+    /* opacity: 0.6; */
   }
-  
+
   h1{
     font-size: 50px;
     letter-spacing: 2px;
